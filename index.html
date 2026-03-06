@@ -1,19 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>Custom Countdown App</title>
-    <link rel="stylesheet" href="style.css">
+    <title>華麗日子倒數計時器</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57); background-size: 400% 400%; animation: gradientShift 15s ease infinite; overflow: hidden;
+        }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .timer-container {
+            text-align: center; position: relative; padding: 2rem; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); backdrop-filter: blur(10px); background: rgba(255,255,255,0.1);
+        }
+        h1 { color: white; font-size: 2.5rem; margin-bottom: 1rem; text-shadow: 0 0 20px rgba(255,255,255,0.8); animation: glow 2s ease-in-out infinite alternate; }
+        @keyframes glow { from { text-shadow: 0 0 20px rgba(255,255,255,0.8); } to { text-shadow: 0 0 30px rgba(255,255,255,1); } }
+        .countdown {
+            display: flex; justify-content: center; gap: 1rem; font-size: 4rem; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.9);
+        }
+        .time-unit { position: relative; min-width: 80px; }
+        .flip-card { perspective: 300px; height: 100px; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card.flipping .flip-card-inner { transform: rotateX(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .flip-card-front { background: linear-gradient(145deg, #667eea, #764ba2); }
+        .flip-card-back { background: linear-gradient(145deg, #f093fb, #f5576c); transform: rotateX(180deg); }
+        .progress-ring { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; }
+        .progress-ring-circle { stroke-dasharray: 753; stroke-dashoffset: 753; stroke-linecap: round; stroke: white; fill: none; stroke-width: 8; stroke-opacity: 0.8; transition: stroke-dashoffset 0.5s ease; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+        .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .particle { position: absolute; width: 4px; height: 4px; background: white; border-radius: 50%; animation: particleFloat 3s infinite linear; }
+        @keyframes particleFloat { 0% { transform: translateY(100vh) scale(0); opacity: 1; } 100% { transform: translateY(-10px) scale(1); opacity: 0; } }
+        .finished { color: #ffd700 !important; font-size: 2rem; animation: celebrate 1s infinite; }
+        @keyframes celebrate { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @media (max-width: 768px) { .countdown { font-size: 2.5rem; gap: 0.5rem; } h1 { font-size: 1.8rem; } .progress-ring { width: 200px; height: 200px; } }
+    </style>
 </head>
 <body>
-    <div class="countdown-container">
-        <h1>Custom Countdown Timer</h1>
-        <form id="countdownForm">
-            <input type="date" id="datePicker" min="">
-            <br><br>
-            <button type="submit">Start Countdown</button>
-        </form>
-        <div id="demo" class="countdown-display">Pick a date and click Start!</div>
+    <div class="timer-container">
+        <svg class="progress-ring" width="300" height="300">
+            <circle r="120" cx="150" cy="150" class="progress-ring-circle"></circle>
+        </svg>
+        <h1 id="event">我的重要日子</h1>
+        <div class="countdown">
+            <div class="time-unit"><span class="label">天</span><div class="flip-card" id="days"><div class="flip-card-inner"><div class="flip-card-front" id="days-front">00</div><div class="flip-card-back" id="days-back">00</div></div></div></div>
+            <div class="time-unit"><span class="label">:</span><div class="flip-card" id="hours"><div class="flip-card-inner"><div class="flip-card-front" id="hours-front">00</div><div class="flip-card-back" id="hours-back">00</div></div></div></div>
+            <div class="time-unit"><span class="label">:</span><div class="flip-card" id="minutes"><div class="flip-card-inner"><div class="flip-card-front" id="minutes-front">00</div><div class="flip-card-back" id="minutes-back">00</div></div></div></div>
+            <div class="time-unit"><span class="label">:</span><div class="flip-card" id="seconds"><div class="flip-card-inner"><div class="flip-card-front" id="seconds-front">00</div><div class="flip-card-back" id="seconds-back">00</div></div></div></div>
+        </div>
+        <div class="particles" id="particles"></div>
     </div>
-    <script src="script.js"></script>
+    <script>
+        const endDate = new Date('2026-12-31T23:59:59').getTime(); // 修改目標日期
+        const units = ['days', 'hours', 'minutes', 'seconds'];
+        const labels = ['天', ':', ':', ':'];
+        let interval;
+
+        function pad(num) { return num.toString().padStart(2, '0'); }
+
+        function createParticles() {
+            const particles = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                particle.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                particles.appendChild(particle);
+            }
+        }
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const diff = endDate - now;
+            if (diff <= 0) {
+                document.querySelector('.countdown').innerHTML = '<div class="finished">時間到！🎉</div>';
+                document.querySelector('.progress-ring-circle').style.strokeDashoffset = '0';
+                // Beep sound
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAo');
+                audio.play();
+                clearInterval(interval);
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            const times = [days, hours, minutes, seconds];
+            const totalSeconds = days*86400 + hours*3600 + minutes*60 + seconds;
+            const circumference = 753;
+            document.querySelector('.progress-ring-circle').style.strokeDashoffset = circumference - (circumference * totalSeconds / (365*86400)); // 假設一年
+
+            times.forEach((time, i) => {
+                const front = document.getElementById(units[i] + '-front');
+                const back = document.getElementById(units[i] + '-back');
+                const card = document.getElementById(units[i]);
+                const newVal = pad(time);
+                if (front.textContent !== newVal) {
+                    front.textContent = newVal;
+                    back.textContent = newVal;
+                    card.classList.add('flipping');
+                    setTimeout(() => card.classList.remove('flipping'), 600);
+                }
+            });
+        }
+
+        createParticles();
+        updateTimer();
+        interval = setInterval(updateTimer, 1000);
+    </script>
 </body>
 </html>
