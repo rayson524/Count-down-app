@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <title>科技日子倒數計時器</title>
+    <title>科技日子倒數計時器 - Hover 放大</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -10,7 +10,7 @@
         body {
             font-family: 'Orbitron', monospace; height: 100vh; display: flex; justify-content: center; align-items: center;
             background: linear-gradient(45deg, #0a0a23, #1a0033, #0f0f4f, #2a0a4a); background-size: 400% 400%; animation: cyberGradient 20s ease infinite;
-            position: relative; overflow: hidden;
+            position: relative; overflow: hidden; cursor: none; /* 可選：隱藏預設游標增科技感 */
         }
         @keyframes cyberGradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         body::before {
@@ -18,7 +18,8 @@
         }
         @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
         .timer-container {
-            text-align: center; position: relative; padding: 3rem 2rem; border-radius: 15px; background: rgba(0,0,0,0.7); border: 2px solid #00ffff; box-shadow: 0 0 50px rgba(0,255,255,0.3), inset 0 0 50px rgba(0,255,255,0.1); backdrop-filter: blur(15px);
+            text-align: center; position: relative; padding: 3rem 2rem; border-radius: 15px; background: rgba(0,0,0,0.7); border: 2px solid #00ffff; 
+            box-shadow: 0 0 50px rgba(0,255,255,0.3), inset 0 0 50px rgba(0,255,255,0.1); backdrop-filter: blur(15px);
         }
         h1 { 
             color: #00ffff; font-size: 2.2rem; font-weight: 900; margin-bottom: 1.5rem; 
@@ -29,9 +30,18 @@
             display: flex; justify-content: center; gap: 1.2rem; font-size: 4.5rem; font-weight: 900; color: #ffffff;
             text-shadow: 0 0 15px #ffffff, 0 0 25px #00ffff;
         }
-        .time-unit { position: relative; min-width: 90px; }
+        .time-unit { 
+            position: relative; min-width: 90px; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease; /* 平滑放大彈跳 */
+        }
+        .time-unit:hover {
+            transform: scale(1.15); /* 放大 15% */
+            z-index: 10; /* 確保浮在上層 */
+            box-shadow: 0 0 30px rgba(0,255,255,0.6) !important; /* 加強霓虹 glow */
+        }
         .label { font-size: 1.2rem; color: #888; margin-bottom: 0.5rem; font-weight: 400; }
-        .flip-card { perspective: 400px; height: 110px; }
+        .flip-card { 
+            perspective: 400px; height: 110px; transition: transform 0.4s ease; /* hover 與翻轉共用 transition */
+        }
         .flip-card-inner { 
             position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55); transform-style: preserve-3d;
         }
@@ -39,10 +49,15 @@
         .flip-card-front, .flip-card-back { 
             position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center;
             border-radius: 8px; box-shadow: 0 8px 16px rgba(0,255,255,0.2); border: 1px solid rgba(0,255,255,0.5);
+            transition: box-shadow 0.4s ease; /* hover glow 過渡 */
         }
         .flip-card-front { background: linear-gradient(145deg, #1e3c72, #2a5298); }
         .flip-card-back { 
             background: linear-gradient(145deg, #00d4ff, #0099cc); transform: rotateX(180deg); box-shadow: 0 8px 16px rgba(0,212,255,0.4);
+        }
+        .time-unit:hover .flip-card-front,
+        .time-unit:hover .flip-card-back {
+            box-shadow: 0 15px 30px rgba(0,255,255,0.5), 0 0 20px rgba(0,255,255,0.4) !important; /* hover 專屬強光 */
         }
         .progress-ring { 
             position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 320px; height: 320px; filter: drop-shadow(0 0 20px #00ffff);
@@ -72,6 +87,7 @@
             h1 { font-size: 1.6rem; } 
             .progress-ring { width: 220px; height: 220px; top: -40px; } 
             .timer-container { padding: 2rem 1rem; }
+            .time-unit:hover { transform: scale(1.1); } /* 手機微調 */
         }
     </style>
 </head>
@@ -128,7 +144,6 @@
             if (diff <= 0) {
                 document.querySelector('.countdown').innerHTML = '<div class="finished">任務完成！</div>';
                 document.querySelector('.progress-ring-circle').style.strokeDashoffset = '0';
-                // 科技 beep
                 const context = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = context.createOscillator();
                 const gainNode = context.createGain();
@@ -149,8 +164,29 @@
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             const times = [days, hours, minutes, seconds];
-            // 進度環：以總秒計算（約 100 天 max）
-            const totalMaxSeconds = 100 * 86400; // 調整若需
+            const totalMaxSeconds = 100 * 86400;
             const totalSeconds = days*86400 + hours*3600 + minutes*60 + seconds;
             const circumference = 785;
-            const progress
+            const progress = circumference * (1 - totalSeconds / totalMaxSeconds);
+            document.querySelector('.progress-ring-circle').style.strokeDashoffset = Math.max(progress, 0);
+
+            times.forEach((time, i) => {
+                const front = document.getElementById(units[i] + '-front');
+                const back = document.getElementById(units[i] + '-back');
+                const card = document.getElementById(units[i]);
+                const newVal = pad(time);
+                if (front.textContent !== newVal) {
+                    front.textContent = newVal;
+                    back.textContent = newVal;
+                    card.classList.add('flipping');
+                    setTimeout(() => card.classList.remove('flipping'), 800);
+                }
+            });
+        }
+
+        createCircuits();
+        updateTimer();
+        interval = setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
