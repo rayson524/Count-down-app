@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <title>科技日子倒數計時器 - Hover 放大</title>
+    <title>科技日子倒數計時器 - 永遠顯示滑鼠</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -10,7 +10,7 @@
         body {
             font-family: 'Orbitron', monospace; height: 100vh; display: flex; justify-content: center; align-items: center;
             background: linear-gradient(45deg, #0a0a23, #1a0033, #0f0f4f, #2a0a4a); background-size: 400% 400%; animation: cyberGradient 20s ease infinite;
-            position: relative; overflow: hidden; cursor: none; /* 可選：隱藏預設游標增科技感 */
+            position: relative; overflow: hidden;
         }
         @keyframes cyberGradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         body::before {
@@ -31,162 +31,11 @@
             text-shadow: 0 0 15px #ffffff, 0 0 25px #00ffff;
         }
         .time-unit { 
-            position: relative; min-width: 90px; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease; /* 平滑放大彈跳 */
+            position: relative; min-width: 90px; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
         }
         .time-unit:hover {
-            transform: scale(1.15); /* 放大 15% */
-            z-index: 10; /* 確保浮在上層 */
-            box-shadow: 0 0 30px rgba(0,255,255,0.6) !important; /* 加強霓虹 glow */
+            transform: scale(1.15);
+            z-index: 10;
+            box-shadow: 0 0 30px rgba(0,255,255,0.6) !important;
         }
-        .label { font-size: 1.2rem; color: #888; margin-bottom: 0.5rem; font-weight: 400; }
-        .flip-card { 
-            perspective: 400px; height: 110px; transition: transform 0.4s ease; /* hover 與翻轉共用 transition */
-        }
-        .flip-card-inner { 
-            position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55); transform-style: preserve-3d;
-        }
-        .flip-card.flipping .flip-card-inner { transform: rotateX(180deg) rotateY(10deg); }
-        .flip-card-front, .flip-card-back { 
-            position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center;
-            border-radius: 8px; box-shadow: 0 8px 16px rgba(0,255,255,0.2); border: 1px solid rgba(0,255,255,0.5);
-            transition: box-shadow 0.4s ease; /* hover glow 過渡 */
-        }
-        .flip-card-front { background: linear-gradient(145deg, #1e3c72, #2a5298); }
-        .flip-card-back { 
-            background: linear-gradient(145deg, #00d4ff, #0099cc); transform: rotateX(180deg); box-shadow: 0 8px 16px rgba(0,212,255,0.4);
-        }
-        .time-unit:hover .flip-card-front,
-        .time-unit:hover .flip-card-back {
-            box-shadow: 0 15px 30px rgba(0,255,255,0.5), 0 0 20px rgba(0,255,255,0.4) !important; /* hover 專屬強光 */
-        }
-        .progress-ring { 
-            position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 320px; height: 320px; filter: drop-shadow(0 0 20px #00ffff);
-        }
-        .progress-ring-circle { 
-            stroke-dasharray: 785; stroke-dashoffset: 785; stroke-linecap: round; stroke: #00ffff; fill: none; stroke-width: 6; 
-            transition: stroke-dashoffset 0.8s ease; filter: drop-shadow(0 0 10px #00ffff);
-        }
-        .circuit-particles { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-        }
-        .circuit { 
-            position: absolute; width: 2px; height: 2px; background: #00ffff; border-radius: 50%; box-shadow: 0 0 10px #00ffff;
-            animation: circuitFlow 4s infinite linear;
-        }
-        @keyframes circuitFlow { 
-            0% { transform: translate(0, 100vh) scale(0); opacity: 1; } 
-            50% { opacity: 0.8; } 
-            100% { transform: translate(100vw, -100px) scale(1); opacity: 0; } 
-        }
-        .finished { 
-            color: #00ff00 !important; font-size: 2.5rem; animation: hackSuccess 0.5s infinite; text-shadow: 0 0 20px #00ff00;
-        }
-        @keyframes hackSuccess { 0%, 100% { transform: scale(1) rotate(0deg); } 25% { transform: scale(1.05) rotate(2deg); } 75% { transform: scale(1.05) rotate(-2deg); } }
-        @media (max-width: 768px) { 
-            .countdown { font-size: 3rem; gap: 0.8rem; } 
-            h1 { font-size: 1.6rem; } 
-            .progress-ring { width: 220px; height: 220px; top: -40px; } 
-            .timer-container { padding: 2rem 1rem; }
-            .time-unit:hover { transform: scale(1.1); } /* 手機微調 */
-        }
-    </style>
-</head>
-<body>
-    <div class="timer-container">
-        <svg class="progress-ring" width="320" height="320">
-            <circle r="125" cx="160" cy="160" class="progress-ring-circle"></circle>
-        </svg>
-        <h1 id="event">任務目標日</h1>
-        <div class="countdown">
-            <div class="time-unit">
-                <div class="label">DAYS</div>
-                <div class="flip-card" id="days"><div class="flip-card-inner"><div class="flip-card-front" id="days-front">00</div><div class="flip-card-back" id="days-back">00</div></div></div>
-            </div>
-            <div class="time-unit">
-                <div class="label">HOURS</div>
-                <div class="flip-card" id="hours"><div class="flip-card-inner"><div class="flip-card-front" id="hours-front">00</div><div class="flip-card-back" id="hours-back">00</div></div></div>
-            </div>
-            <div class="time-unit">
-                <div class="label">MINS</div>
-                <div class="flip-card" id="minutes"><div class="flip-card-inner"><div class="flip-card-front" id="minutes-front">00</div><div class="flip-card-back" id="minutes-back">00</div></div></div>
-            </div>
-            <div class="time-unit">
-                <div class="label">SECS</div>
-                <div class="flip-card" id="seconds"><div class="flip-card-inner"><div class="flip-card-front" id="seconds-front">00</div><div class="flip-card-back" id="seconds-back">00</div></div></div>
-            </div>
-        </div>
-        <div class="circuit-particles" id="circuits"></div>
-    </div>
-    <script>
-        // 目標日期：2026年5月24日 00:00:00 HKT
-        const endDate = new Date('2026-05-24T00:00:00+08:00').getTime();
-        const units = ['days', 'hours', 'minutes', 'seconds'];
-        let interval;
-
-        function pad(num) { return num.toString().padStart(2, '0'); }
-
-        function createCircuits() {
-            const circuits = document.getElementById('circuits');
-            for (let i = 0; i < 30; i++) {
-                const circuit = document.createElement('div');
-                circuit.className = 'circuit';
-                circuit.style.left = Math.random() * 100 + '%';
-                circuit.style.top = Math.random() * 100 + '%';
-                circuit.style.animationDelay = Math.random() * 4 + 's';
-                circuit.style.animationDuration = (Math.random() * 2 + 3) + 's';
-                circuits.appendChild(circuit);
-            }
-        }
-
-        function updateTimer() {
-            const now = new Date().getTime();
-            const diff = endDate - now;
-            if (diff <= 0) {
-                document.querySelector('.countdown').innerHTML = '<div class="finished">任務完成！</div>';
-                document.querySelector('.progress-ring-circle').style.strokeDashoffset = '0';
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = context.createOscillator();
-                const gainNode = context.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(context.destination);
-                oscillator.frequency.value = 800;
-                oscillator.type = 'square';
-                gainNode.gain.setValueAtTime(0.3, context.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
-                oscillator.start(context.currentTime);
-                oscillator.stop(context.currentTime + 0.5);
-                clearInterval(interval);
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            const times = [days, hours, minutes, seconds];
-            const totalMaxSeconds = 100 * 86400;
-            const totalSeconds = days*86400 + hours*3600 + minutes*60 + seconds;
-            const circumference = 785;
-            const progress = circumference * (1 - totalSeconds / totalMaxSeconds);
-            document.querySelector('.progress-ring-circle').style.strokeDashoffset = Math.max(progress, 0);
-
-            times.forEach((time, i) => {
-                const front = document.getElementById(units[i] + '-front');
-                const back = document.getElementById(units[i] + '-back');
-                const card = document.getElementById(units[i]);
-                const newVal = pad(time);
-                if (front.textContent !== newVal) {
-                    front.textContent = newVal;
-                    back.textContent = newVal;
-                    card.classList.add('flipping');
-                    setTimeout(() => card.classList.remove('flipping'), 800);
-                }
-            });
-        }
-
-        createCircuits();
-        updateTimer();
-        interval = setInterval(updateTimer, 1000);
-    </script>
-</body>
-</html>
+        .label { font-size: 1.2rem; color: #888; margin-bottom: 0.5rem; font-weight:
